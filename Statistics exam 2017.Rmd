@@ -1,0 +1,191 @@
+---
+title: "Statistics Exam 2017"
+author: '712538'
+date: "04 August 2017"
+output: html_document
+---
+###Loading packages...
+```{r packages}
+library(plyr)
+library(tidyr)
+library(dplyr)
+
+```
+
+#Question 1
+a) The data set is untidy in that two variables are stored together in a single column (group and location), and will need to be spread into two distinct columns. The data is also untidy in that pain intensity is a measure between 0 and 10 - here there are many pain intensity values of 9999, which cannot be included in the data analysis.
+```{r Question1b_tidy}
+#Loading the data csv...
+pain <- read.csv("https://dl.dropboxusercontent.com/u/11805474/painblogr/biostats/exam-data-2017/question_1.csv")
+
+#quick look:
+head(pain)
+summary(pain)
+
+#removing pain intensity values outside of the scale
+painsub1 <- subset(pain, Baseline!="9999", select=Patient.ID:Week.8)
+painsub2 <- subset(painsub1, Week.4!="9999", select=Patient.ID:Week.8)
+painsub3 <- subset(painsub2, Week.8!="9999", select=Patient.ID:Week.8)
+head(painsub3)
+
+#separating group and location
+pain_clean <- separate(painsub3, Group.and.location, into = c("Group", "Location"))
+head(pain_clean)
+
+```
+
+###Data Plot
+```{r question1c_plot}
+#Subsetting Johannesburg
+painJ <- subset(pain_clean, Location=="Johannesburg", select=Location:Week.8)
+#changing factors to numerics
+baseJ <- as.numeric(painJ$Baseline)
+W4J <- as.numeric(painJ$Week.4)
+W8J <- as.numeric(painJ$Week.8)
+#calculating respective means
+meansJ <- c(mean(baseJ), mean(W4J), mean(W8J))
+#barplot for JOhannesburg
+barplot(meansJ, main="Johannesburg", ylab="Pain intensity", xlab="Time period")
+
+#Subsetting Zithulele
+painZ <- subset(pain_clean, Location=="Zithulele", select=Location:Week.8)
+#changing factors to numerics
+baseZ <- as.numeric(painZ$Baseline)
+W4Z <- as.numeric(painZ$Week.4)
+W8Z <- as.numeric(painZ$Week.8)
+#calculatin respective means
+meansZ <- c(mean(baseZ), mean(W4Z), mean(W8Z))
+#barplot for Zithulele
+barplot(meansZ, main="Zithulele", ylab="Pain intensity", xlab="Time period")
+
+#Subsetting Manguzi
+painM <- subset(pain_clean, Location=="Manguzi", select=Location:Week.8)
+#changing factors to numerics
+baseM <- as.numeric(painM$Baseline)
+W4M <- as.numeric(painM$Week.4)
+W8M <- as.numeric(painM$Week.8)
+#calculatin respective means
+meansM <- c(mean(baseM), mean(W4M), mean(W8M))
+#barplot for Manguzi
+barplot(meansM, main="Manguzi", ylab="Pain intensity", xlab="Time period")
+
+#Subsetting Retreat
+painR <- subset(pain_clean, Location=="Retreat", select=Location:Week.8)
+#changing factors to numerics
+baseR <- as.numeric(painR$Baseline)
+W4R <- as.numeric(painR$Week.4)
+W8R <- as.numeric(painR$Week.8)
+#calculatin respective means
+meansR <- c(mean(baseR), mean(W4R), mean(W8R))
+#barplot for Retreat
+barplot(meansR, main="Retreat", ylab="Pain intensity", xlab="Time period")
+```
+
+
+#Question 2
+```{r question2_explore}
+#loading data csv...
+fertile <- read.csv("https://dl.dropboxusercontent.com/u/11805474/painblogr/biostats/exam-data-2017/question_2.csv")
+
+#quick look
+head(fertile)
+summary(fertile)
+
+#exploratory plots
+plot(fertile$Fertility, fertile$Catholic)
+hist(fertile$Fertility)
+hist(fertile$Catholic)
+
+```
+
+##Description of data and test: 
+###Fertility and percentage Catholicism are both continuous numerical variables. State is a nominal variable but is irrelevant to the question posed (relationship between religion and fertility). Therefore, a correlation test will be used to establish whether there is a relationship between the percentage of Catholicism and the level of fertility.The histograms show that both variables cannot be considered parametric and so a Spearman's correlation will be used. The assumptions underlying a Spearman's correlation test are linearity, absence of outliers, independence of observations, related pairs and homoskedasticity. 
+###Null hypothesis: There is no correlation between the percentage of catholicism and the level of fertility
+###Alternative hypothesis: There is a correlation between the percentage of catholicism and the level of fertility
+```{r question2_analysis}
+#Spearman's test on Fertility vs percentage Catholicism
+cor.test(x=fertile$Fertility, y=fertile$Catholic, method="spearman")
+
+```
+###Spearman's correlation test produced a p-value of 0.003851, which is less than the 0.05 required for significance. However, the rho obtained is 0.4136456, which indicates a weak association (if any). It is also evident from the exploratory graph that any relationship between the two variables would be weak at best. Thus, on the basis of this data, the null hypothesis cannot be rejected, and no relationship can be assumed to exist between the level of fertility and the percentage of Catholicism.A test of heteroskedasticity could be performed in order to assess whether that criterion is met, however, that requires performing a linear regression analysis which is likely to be pointless given the outcome of the correlation test.
+
+#Question 3
+```{r question3_explore}
+#loading data csv...
+crop <- read.csv("https://dl.dropboxusercontent.com/u/11805474/painblogr/biostats/exam-data-2017/question_3.csv")
+
+#quick look
+head(crop)
+summary(crop)
+
+#exploratory plots
+boxplot(crop)
+hist(crop$control)
+hist(crop$treatment_1)
+hist(crop$treatment_2)
+
+#tidying from wide to long format
+crop1 <- gather(crop, Treatment, Yield)
+head(crop1)
+summary(crop1)
+
+```
+
+##Description of data and test:
+###Variables are all continuous, but do not all display convincing normality in the plotted histograms. As three non-parametric groups are to be compared and the data is unpaired, a Kruskal-Wallis test will be used to check for differences in crop yield between the three groups. The assumptions underlying the Kruskal-Wallis test are that errors are independent, data is unmatched and that the samples are derived from populations with similar distributions.
+###Null hypothesis: There is no difference between crop yield according to treatment
+###Alternative hypothesis: There is a difference between crop yield according to treatment
+```{r question3_analysis}
+#Kruskal-Wallis test for difference
+kruskal.test(Yield ~ as.factor(Treatment), data = crop1)
+
+```
+###The kruskal-wallis test produces a p-value of 0.01842 with 2 degrees of freedom. The p-value is below 0.05 and thus significant, hence the null hypothesis can be rejected - there is a statistical difference between crop yields according to treatment. According to the initial boxplot, treatment 2 appears to produce the highest yield. A post-hoc analysis using the pairwise Wilcoxon test will be performed  
+```{r question3_posthoc}
+#post-hoc pairwise wilcoxon test with holm adjustment for mutliple comparisons
+pairwise.wilcox.test(x = crop1$Yield, g = crop1$Treatment,  p.adjust.methods="holm", paired=FALSE)
+
+```
+###The pairwise Wilcoxon test gave the following p-values: 0.199 for treatment 1 vs control, 0.126 for treatment 2 vs control and 0.027 for treatment 1 vs treatment 2. The only significant difference is that between treatment 1 and treatment 2. Thus it can be concluded that while neither treatment produces a significantly different yield to that obtained in the control condition, treatment 2 produces a significantly higher yield than that obtained in treatment 1.
+
+#Question 4
+```{r question4_explore}
+#loading data csv...
+heart <- read.csv("https://dl.dropboxusercontent.com/u/11805474/painblogr/biostats/exam-data-2017/question_4.csv")
+
+#quick look
+head(heart)
+summary(heart)
+
+#exploratory plots
+heart_tbl <- table(heart$Diet, heart$Condition)
+heart_tbl
+plot(heart_tbl)
+
+```
+
+##Description of data and test:
+###Data is categorical and thus, organised into a contingency table, can be analysed by a chi-squared test. The assumptions underlying a chi-squared test are that the sampling is random, observations are independent, the sample is sufficiently large, and that the contingency table of the data follows a chi-squared distribution.
+###Null hypothesis: There is no difference in disease outcome according to diet
+###Alternative hypothesis: There is a difference in disease outcome according to diet
+```{r question4_analysis}
+#Analysis of entire table using a chi-squared test
+chisq.test(heart_tbl)
+
+```
+###The chi-squared test gives a p-value of 0.0004454 with 2 degrees of freedom. This p-value is below 0.05 and thus the null hypothesis can be rejected. It can be concluded that there is a difference in disease outcome according to diet. The table will be divided into 2x2 tables to be reanalysed in order to find where the difference is.
+
+```{r question4_posthoc}
+#Subsetting tables
+ch <- heart_tbl[, 1:2]
+ch
+hhd <- heart_tbl[, 2:3]
+hhd
+
+#chi-squared test for cancer vs healthy
+chisq.test(ch)
+#chi-squared test for healthy vs heart disease
+chisq.test(hhd)
+
+```
+###The p-value obtained for the outcomes of cancer vs healthy was 0.0785 (1 degree of freedom), thus it is concluded that diet does not influence the outcome of cancer vs being healthy. However, the p-value for obtained for the outcomes of heart disease vs healthy was 0.0006718 (1 degree of freedom), thus it is concluded that diet does affect the outcome of heart disease vs being healthy. The Mediterranean diet can be concluded to be superior in preventing heart disease, but not in preventing cancer.
